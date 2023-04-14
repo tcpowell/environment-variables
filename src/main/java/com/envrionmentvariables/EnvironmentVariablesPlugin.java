@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -24,6 +23,7 @@ public class EnvironmentVariablesPlugin extends Plugin
 	private static List<String> JAGEX_VARIABLES = Arrays.asList(new String[]{"JX_CHARACTER_ID", "JX_DISPLAY_NAME", "JX_REFRESH_TOKEN", "JX_SESSION_ID", "JX_ACCESS_TOKEN"});
 	private static String JAGEX_PREFIX = "JX_";
 	private static String ICON_PATH = "/panel_icon.png";
+	protected static final String CONFIG_GROUP = "environmentvariables";
 
 	private static Map<String, String> environmentVariables = System.getenv();
 
@@ -35,7 +35,7 @@ public class EnvironmentVariablesPlugin extends Plugin
 	private ClientToolbar clientToolbar;
 
 	@Inject
-	private Client client;
+	private ConfigManager configmanager;
 
 	@Inject
 	private EnvironmentVariablesConfig config;
@@ -72,7 +72,7 @@ public class EnvironmentVariablesPlugin extends Plugin
 		}
 
 		//Add the panel to the client toolbar
-		panel = new EnvironmentVariablesPanel(config, targetVariables, concatString);
+		panel = new EnvironmentVariablesPanel(this, targetVariables, concatString);
 		navButton = NavigationButton.builder()
 			.tooltip("Environment Variables")
 			.icon(ImageUtil.loadImageResource(getClass(), ICON_PATH))
@@ -89,14 +89,24 @@ public class EnvironmentVariablesPlugin extends Plugin
 		return input == null ? replacement : input;
 	}
 
+	public boolean isMasked()
+	{
+		return config.maskvariables();
+	}
+
 	@Override
 	protected void shutDown() throws Exception
 	{
+		saveConfig();
 		clientToolbar.removeNavigation(navButton);
 		panel = null;
 		navButton = null;
 	}
 
+	public void saveConfig()
+	{
+		configmanager.setConfiguration(CONFIG_GROUP, "maskvariables", panel.isMaskVariables());
+	}
 
 	@Provides
 	EnvironmentVariablesConfig provideConfig(ConfigManager configManager)

@@ -1,10 +1,11 @@
 package com.envrionmentvariables;
 
+import static com.envrionmentvariables.EnvironmentVariablesPlugin.CONFIG_GROUP;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup("environmentvariables")
+@ConfigGroup(CONFIG_GROUP)
 public interface EnvironmentVariablesConfig extends Config
 {
 	@ConfigItem(

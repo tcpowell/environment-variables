@@ -2,6 +2,7 @@ package com.envrionmentvariables;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Toolkit;
@@ -9,6 +10,8 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
@@ -16,6 +19,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
+import lombok.Getter;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
@@ -23,15 +27,24 @@ import net.runelite.client.ui.components.FlatTextField;
 
 public class EnvironmentVariablesPanel extends PluginPanel
 {
+	protected final EnvironmentVariablesPlugin plugin;
+
 	private final JPanel titlePanel = new JPanel(new BorderLayout());
 	private final JLabel title = new JLabel();
 
 	private final JLabel toggleVisibility = new JLabel(Icons.SHOW_ICON);
 	private final JLabel copyString = new JLabel(Icons.COPY_ICON);
 
-	public EnvironmentVariablesPanel(EnvironmentVariablesConfig config, Map<String, String> targetVariables, String concatString)
+	@Getter
+	public boolean maskVariables = false;
+
+	public EnvironmentVariablesPanel(EnvironmentVariablesPlugin plug, Map<String, String> targetVariables, String concatString)
 	{
 		super();
+
+		this.plugin = plug;
+		maskVariables = plugin.isMasked();
+		toggleVisibility.setIcon(maskVariables ? Icons.HIDE_ICON : Icons.SHOW_ICON);
 
 		setBorder(new EmptyBorder(10, 10, 10, 10));
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -44,19 +57,22 @@ public class EnvironmentVariablesPanel extends PluginPanel
 			@Override
 			public void mousePressed(MouseEvent mouseEvent)
 			{
-				toggleVisibility.setIcon(Icons.SHOW_ICON);
+				toggleVisibility.setIcon(maskVariables ? Icons.SHOW_ICON_HOVER : Icons.HIDE_ICON_HOVER);
+				maskVariables = !maskVariables;
+				plugin.saveConfig();
+				toggleMask(targetVariables);
 			}
 
 			@Override
 			public void mouseEntered(MouseEvent mouseEvent)
 			{
-				toggleVisibility.setIcon(Icons.SHOW_ICON_HOVER);
+				toggleVisibility.setIcon(maskVariables ? Icons.HIDE_ICON_HOVER : Icons.SHOW_ICON_HOVER);
 			}
 
 			@Override
 			public void mouseExited(MouseEvent mouseEvent)
 			{
-				toggleVisibility.setIcon(Icons.SHOW_ICON);
+				toggleVisibility.setIcon(maskVariables ? Icons.HIDE_ICON : Icons.SHOW_ICON);
 			}
 		});
 
@@ -66,18 +82,13 @@ public class EnvironmentVariablesPanel extends PluginPanel
 			@Override
 			public void mousePressed(MouseEvent mouseEvent)
 			{
-
-
 				final StringSelection selection = new StringSelection(concatString);
 				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
-
 
 				JOptionPane.showMessageDialog(copyString,
 					"Concatenated variable string copied to clipboard.",
 					"Success",
 					JOptionPane.PLAIN_MESSAGE);
-
-
 			}
 
 			@Override
@@ -93,7 +104,6 @@ public class EnvironmentVariablesPanel extends PluginPanel
 			}
 		});
 
-
 		title.setText("Environment Variables");
 		title.setForeground(Color.WHITE);
 		title.setBorder(new EmptyBorder(0, 0, 0, 40));
@@ -108,11 +118,10 @@ public class EnvironmentVariablesPanel extends PluginPanel
 
 		add(Box.createRigidArea(new Dimension(5, 40)));
 
-
 		//Add components
 		for (Map.Entry<String, String> entry : targetVariables.entrySet())
 		{
-			addComponent(entry.getKey(), entry.getValue(), config.maskvariables());
+			addComponent(entry.getKey(), entry.getValue(), maskVariables);
 		}
 
 	}
@@ -121,16 +130,12 @@ public class EnvironmentVariablesPanel extends PluginPanel
 	{
 		if (hidden)
 		{
-			String masked = "";
-			for (int i = 0; i < value.length(); i++)
-			{
-				masked = masked + "*";
-			}
-			value = masked;
+			value = maskString(value);
 		}
 
 		final JPanel container = new JPanel();
 		container.setLayout(new BorderLayout());
+		container.setName(label + "container");
 
 		final JLabel uiLabel = new JLabel(label);
 		final FlatTextField uiInput = new FlatTextField();
@@ -138,6 +143,7 @@ public class EnvironmentVariablesPanel extends PluginPanel
 		uiInput.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		uiInput.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
 		uiInput.setBorder(new EmptyBorder(5, 7, 5, 7));
+		uiInput.setName(label);
 		uiInput.setText(value);
 
 		uiLabel.setFont(FontManager.getRunescapeSmallFont());
@@ -152,4 +158,30 @@ public class EnvironmentVariablesPanel extends PluginPanel
 
 		return uiInput.getTextField();
 	}
+
+	private void toggleMask(Map<String, String> targetVariables)
+	{
+		for (Map.Entry<String, String> entry : targetVariables.entrySet())
+		{
+			for (Component component : getComponents())
+			{
+				if (component instanceof JPanel && component.getName() != null && component.getName().equals(entry.getKey() + "container"))
+				{
+					for (Component child : ((JPanel) component).getComponents())
+					{
+						if (child instanceof FlatTextField && child.getName() != null && child.getName().equals(entry.getKey()))
+						{
+							((FlatTextField) child).setText(maskVariables ? maskString(entry.getValue()) : entry.getValue());
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private String maskString(String inputString)
+	{
+		return IntStream.range(0, inputString.length()).mapToObj(i -> "*").collect(Collectors.joining());
+	}
+
 }
