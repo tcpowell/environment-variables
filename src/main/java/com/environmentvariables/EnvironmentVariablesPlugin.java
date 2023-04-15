@@ -1,4 +1,4 @@
-package com.envrionmentvariables;
+package com.environmentvariables;
 
 import com.google.inject.Provides;
 import java.util.Arrays;

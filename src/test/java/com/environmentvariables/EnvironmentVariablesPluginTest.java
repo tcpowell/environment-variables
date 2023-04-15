@@ -1,4 +1,4 @@
-package com.envrionmentvariables;
+package com.environmentvariables;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;

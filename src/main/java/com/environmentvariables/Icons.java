@@ -1,4 +1,4 @@
-package com.envrionmentvariables;
+package com.environmentvariables;
 
 import java.awt.image.BufferedImage;
 import javax.swing.ImageIcon;

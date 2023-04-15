@@ -1,6 +1,6 @@
-package com.envrionmentvariables;
+package com.environmentvariables;
 
-import static com.envrionmentvariables.EnvironmentVariablesPlugin.CONFIG_GROUP;
+import static com.environmentvariables.EnvironmentVariablesPlugin.CONFIG_GROUP;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;

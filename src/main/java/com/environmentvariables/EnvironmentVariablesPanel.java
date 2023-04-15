@@ -1,4 +1,4 @@
-package com.envrionmentvariables;
+package com.environmentvariables;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
